@@ -23,7 +23,7 @@ public:
 
     ~my_vector();
 
-    my_vector(const my_vector &other) noexcept ;
+    my_vector(const my_vector &other) noexcept;
 
     void reserve(size_t capacity);
 
@@ -51,9 +51,11 @@ public:
 
     void insert_to_begin(size_t amount, ui val);
 
-    ui* get_data();
-    ui* get_data() const;
-    ui* get_data_and_check();
+    ui *get_data();
+
+    ui *get_data() const;
+
+    ui *get_data_and_check();
 
 private:
     static const size_t SMALL_DATA_SIZE = 4;

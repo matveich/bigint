@@ -9,7 +9,7 @@ my_vector::my_vector() : is_big(false),
                          _size(0),
                          real_data(data.small) {}
 
-my_vector::my_vector(size_t size): my_vector(size, 0) {
+my_vector::my_vector(size_t size) : my_vector(size, 0) {
 }
 
 my_vector::~my_vector() {
@@ -17,7 +17,7 @@ my_vector::~my_vector() {
         data.big.~big_storage();
 }
 
-my_vector::my_vector(size_t size, my_vector::ui val): my_vector() {
+my_vector::my_vector(size_t size, my_vector::ui val) : my_vector() {
     reserve(size);
     std::fill(real_data, real_data + size, val);
     _size = size;
@@ -35,7 +35,7 @@ my_vector::my_vector(const my_vector &other) noexcept: my_vector() {
     }
 }
 
-my_vector::my_vector(const std::initializer_list<my_vector::ui> &list): my_vector() {
+my_vector::my_vector(const std::initializer_list<my_vector::ui> &list) : my_vector() {
     reserve(list.size());
     _size = list.size();
     std::copy(list.begin(), list.end(), real_data);
@@ -110,12 +110,11 @@ my_vector &my_vector::operator=(const my_vector &other) noexcept {
         else
             new(&data.big)big_storage(other.data.big);
         real_data = data.big.ptr.get();
-    }
-    else {
+    } else {
         if (is_big)
             data.big.~big_storage();
         std::copy(other.data.small, other.data.small + other._size, data.small);
-        real_data = const_cast<ui*>(data.small);
+        real_data = const_cast<ui *>(data.small);
     }
     is_big = other.is_big;
     return *this;
@@ -142,27 +141,25 @@ void my_vector::insert_to_begin(size_t amount, my_vector::ui val) {
         if (is_big) {
             data.big._capacity = new_cap;
             data.big.ptr.reset(cp, std::default_delete<ui[]>());
-        }
-        else {
+        } else {
             is_big = true;
             new(&data.big)big_storage(cp, new_cap);
         }
         real_data = data.big.ptr.get();
-    }
-    else
+    } else
         std::copy(cp, cp + SMALL_DATA_SIZE, data.small);
     _size += amount;
 }
 
-my_vector::ui* my_vector::get_data() {
+my_vector::ui *my_vector::get_data() {
     return real_data;
 }
 
-my_vector::ui* my_vector::get_data() const {
+my_vector::ui *my_vector::get_data() const {
     return real_data;
 }
 
-my_vector::ui* my_vector::get_data_and_check() {
+my_vector::ui *my_vector::get_data_and_check() {
     data_check();
     return real_data;
 }

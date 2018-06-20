@@ -362,8 +362,7 @@ big_integer &big_integer::operator<<=(int rhs) {
     if (rhs == 0) {
         for (size_t i = 0; i < number.size(); i++)
             res_data[start + i] = data[i];
-    }
-    else {
+    } else {
         for (size_t i = 0; i < number.size(); i++) {
             res_data[start + i] = (data[i] << rhs) + cf;
             cf = cast_to_ui(data[i] >> (BASE - rhs));
@@ -400,8 +399,7 @@ big_integer &big_integer::operator>>=(int rhs) {
     if (rhs == 0) {
         for (int i = static_cast<int>(number.size()) - 1; i >= gap; i--)
             res_data[i - gap] = data[i];
-    }
-    else {
+    } else {
         ui cf = 0;
         for (int i = static_cast<int>(number.size()) - 1; i >= gap; i--) {
             res_data[i - gap] = (data[i] >> rhs) + cf;
