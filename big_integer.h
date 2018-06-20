@@ -7,10 +7,10 @@
 
 #include <algorithm>
 #include <string>
-#include <vector>
 #include <climits>
 #include <cmath>
 #include <cassert>
+#include "my_vector.h"
 
 struct big_integer {
     typedef unsigned int ui;
@@ -66,7 +66,7 @@ struct big_integer {
 
     friend big_integer operator%(big_integer a, big_integer const &b);
 
-    friend std::string to_string(big_integer const &);
+    friend std::string to_string(big_integer const &a);
 
     friend bool operator==(big_integer const &a, big_integer const &b);
 
@@ -95,7 +95,7 @@ struct big_integer {
 private:
 
     bool sign;
-    std::vector<ui> number;
+    my_vector number;
 
     std::pair<big_integer, big_integer> div_mod(big_integer const &a);
 
@@ -104,8 +104,6 @@ private:
     big_integer quotient(ui x) const;
 
     ui remainder(ui x) const;
-
-    int abs_cmp(big_integer const &a, big_integer const &b);
 
     void add_one();
 

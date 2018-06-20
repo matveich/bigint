@@ -49,7 +49,7 @@ big_integer::big_integer(std::string source) :
 
 big_integer::~big_integer() {
     sign = false;
-    number.clear();
+    number = my_vector();
 }
 
 big_integer &big_integer::operator=(big_integer const &other) {
@@ -66,9 +66,12 @@ big_integer big_integer::operator-() const {
     if (*this == 0)
         return *this;
     big_integer res;
-    res.number.resize(number.size() + 1);
-    for (size_t i = 0; i < number.size(); ++i)
-        res.number[i] = ~number[i];
+    auto _size = number.size();
+    res.number.resize(_size + 1);
+    auto data = number.get_data();
+    auto res_data = res.number.get_data_and_check();
+    for (size_t i = 0; i < _size; ++i)
+        res_data[i] = ~data[i];
     res.shrink();
     res.add_one();
     res.sign = !sign;
@@ -77,9 +80,11 @@ big_integer big_integer::operator-() const {
 
 void big_integer::add_one() {
     bool cf = true;
-    for (size_t i = 0; cf && i < number.size(); ++i) {
-        number[i] += 1;
-        cf = number[i] == 0;
+    auto data = number.get_data_and_check();
+    auto _size = number.size();
+    for (size_t i = 0; cf && i < _size; ++i) {
+        data[i] += 1;
+        cf = data[i] == 0;
     }
     if (cf)
         number.push_back(1);
@@ -89,20 +94,28 @@ big_integer &big_integer::operator+=(big_integer const &rhs) {
     ull cf = 0;
     big_integer result = rhs;
     size_t n = std::max(number.size(), result.number.size()) + 2;
+    int eq_len = number.size() < result.number.size() ? -1 :
+                 number.size() == result.number.size() ? 0 :
+                 1;
+    size_t h_i = number.size() - 1;
     number.resize(n, sign ? MAX_INT : 0);
     result.number.resize(n, result.sign ? MAX_INT : 0);
+    auto data = number.get_data_and_check();
+    auto res_data = result.number.get_data_and_check();
     for (size_t it = 0; it < n; ++it) {
-        cf = cf + number[it] + result.number[it];
-        result.number[it] = cast_to_ui(cf);
+        cf = cf + data[it] + res_data[it];
+        res_data[it] = cast_to_ui(cf);
         cf >>= BASE;
     }
 
     result.sign = sign;
-    shrink();
     if (sign != rhs.sign) {
-        int res = (sign ? abs_cmp(-(*this), rhs) : abs_cmp(*this, -rhs));
-        if (res <= 0)
-            result.sign = (res == 0 ? false : !result.sign);
+        if (eq_len == -1)
+            result.sign = !sign;
+        else if (eq_len == 0) {
+            if ((!sign && res_data[h_i] > data[h_i]) || (sign && res_data[h_i] < data[h_i]))
+                result.sign = !sign;
+        }
     }
     result.shrink();
     return *this = result;
@@ -137,10 +150,17 @@ big_integer big_integer::mul_long_short(big_integer::ui x, size_t offset) const 
     result.sign = sign;
     size_t n = length() + offset + 2;
     result.number.resize(n, sign ? UINT32_MAX : 0);
+    auto res_data = result.number.get_data();
+    auto data = number.get_data();
     ull mul = 0, cf = 0;
-    for (size_t i = offset; i < n; i++) {
-        mul = static_cast<ull>((*this)[i - offset]) * x + cf;
-        result.number[i] = cast_to_ui(mul);
+    for (size_t i = offset; i < n - 2; i++) {
+        mul = static_cast<ull>(data[i - offset]) * x + cf;
+        res_data[i] = cast_to_ui(mul);
+        cf = mul >> BASE;
+    }
+    for (size_t i = n - 2; i < n; i++) {
+        mul = static_cast<ull>(sign ? MAX_INT : 0) * x + cf;
+        res_data[i] = cast_to_ui(mul);
         cf = mul >> BASE;
     }
     result.shrink();
@@ -179,6 +199,9 @@ std::pair<big_integer, big_integer> big_integer::div_mod(big_integer const &rhs)
         return std::make_pair(quotient(rhs[0]), remainder(rhs[0]));
     big_integer b(rhs);
 
+    //auto data = number.get_data_and_check();
+    b.number.get_data_and_check();
+
     // normalize b
     ui k = static_cast<ui>(ceil(log2((static_cast<double>(cast_to_ui(SHIFT_BASE >> 1)) / b.number.back()))));
     b <<= k;
@@ -187,20 +210,21 @@ std::pair<big_integer, big_integer> big_integer::div_mod(big_integer const &rhs)
     size_t n = b.length();
     big_integer q;
     q.number.resize(m + 1);
+    auto q_data = q.number.get_data_and_check();
     b <<= (BASE * m);
     if (*this > b) {
-        q.number[m] = 1;
+        q_data[m] = 1;
         *this -= b;
     }
 
     for (int j = static_cast<int>(m - 1); j >= 0; j--) {
-        q.number[j] = cast_to_ui(((static_cast<ull>((*this)[n + j]) << BASE) + (*this)[n + j - 1]) / b.number.back());
+        q_data[j] = cast_to_ui(((static_cast<ull>((*this)[n + j]) << BASE) + (*this)[n + j - 1]) / b.number.back());
         b >>= BASE;
-        *this -= b.mul_long_short(q[j], 0);
+        *this -= b.mul_long_short(q_data[j], 0);
 
         // is executed twice in the worst case
         while (sign) {
-            q.number[j]--;
+            q_data[j]--;
             *this += b;
         }
     }
@@ -215,8 +239,10 @@ big_integer &big_integer::operator*=(big_integer const &rhs) {
     if (s1) storage = -storage;
     if (s2) rhs_copy = -rhs_copy;
     *this = 0;
+    storage.number.get_data_and_check();
+    auto rhs_data = rhs_copy.number.get_data_and_check();
     for (size_t i = 0; i < rhs_copy.length(); i++)
-        *this += storage.mul_long_short(rhs_copy[i], i);
+        *this += storage.mul_long_short(rhs_data[i], i);
     shrink();
     if (s1 != s2) *this = -(*this);
     return *this;
@@ -242,7 +268,7 @@ bool operator==(big_integer const &a, big_integer const &b) {
     if (a.sign != b.sign || a.length() != b.length())
         return false;
     for (int i = static_cast<int>(a.length()) - 1; i >= 0; i--) {
-        if (a[i] != b[i])
+        if (a.number[i] != b.number[i])
             return false;
     }
     return true;
@@ -257,9 +283,11 @@ bool operator<(big_integer const &a, big_integer const &b) {
         return a.sign > b.sign;
     if (a.length() != b.length())
         return a.sign ^ (a.length() < b.length());
+    auto a_data = a.number.get_data();
+    auto b_data = b.number.get_data();
     for (int i = static_cast<int>(a.length()) - 1; i >= 0; i--) {
-        if (a[i] != b[i])
-            return a.sign ^ (a[i] < b[i]);
+        if (a_data[i] != b_data[i])
+            return a.sign ^ (a_data[i] < b_data[i]);
     }
     return false;
 }
@@ -276,25 +304,15 @@ bool operator>=(big_integer const &a, big_integer const &b) {
     return a > b || a == b;
 }
 
-int big_integer::abs_cmp(big_integer const &a, big_integer const &b) {
-    assert(a.sign == b.sign);
-    if (a.length() != b.length())
-        return a.length() < b.length() ? -1 : 1;
-    for (int i = static_cast<int>(a.length()) - 1; i >= 0; i--) {
-        if (a[i] != b[i])
-            return a[i] < b[i] ? -1 : 1;
-    }
-    return 0;
-}
-
 big_integer big_integer::operator~() const {
     return -(*this) - 1;
 }
 
 template<class FunctorT>
 big_integer &big_integer::apply_bitwise_operation(big_integer const &rhs, FunctorT functor) {
+    auto data = number.get_data_and_check();
     for (size_t i = 0; i < length(); i++)
-        number[i] = functor(number[i], rhs[i]);
+        data[i] = functor(data[i], rhs.number[i]);
     sign = functor(sign, rhs.sign);
     return *this;
 }
@@ -328,21 +346,28 @@ big_integer &big_integer::operator<<=(int rhs) {
     if (rhs < 0)
         throw "error! right value is negative";
     bool negative_flag = sign;
-    if (rhs % BASE == 0) {
-        std::vector<int> zeros(rhs / BASE, negative_flag ? MAX_INT : 0);
-        number.insert(number.begin(), zeros.begin(), zeros.end());
+    /*if (rhs % BASE == 0) {
+        number.insert_to_begin(rhs / BASE, negative_flag ? MAX_INT : 0);
         return *this;
-    }
+    }*/
     if (negative_flag)
         *this = -(*this);
     big_integer result;
-    result.number.resize(rhs / BASE);
-    result.number.reserve(rhs / BASE + number.size() + 2);
+    size_t start = rhs / BASE;
+    result.number.resize(start + number.size(), negative_flag ? MAX_INT : 0);
+    auto res_data = result.number.get_data_and_check();
+    auto data = number.get_data();
     rhs %= BASE;
     ui cf = 0;
-    for (auto &x: number) {
-        result.number.push_back((x << rhs) + cf);
-        cf = cast_to_ui(x >> (BASE - rhs));
+    if (rhs == 0) {
+        for (size_t i = 0; i < number.size(); i++)
+            res_data[start + i] = data[i];
+    }
+    else {
+        for (size_t i = 0; i < number.size(); i++) {
+            res_data[start + i] = (data[i] << rhs) + cf;
+            cf = cast_to_ui(data[i] >> (BASE - rhs));
+        }
     }
     if (cf != 0)
         result.number.push_back(cf);
@@ -359,24 +384,32 @@ big_integer operator<<(big_integer a, int b) {
 big_integer &big_integer::operator>>=(int rhs) {
     if (rhs < 0)
         throw "error! right value is negative";
-    if (rhs % BASE == 0) {
+    /*if (rhs % BASE == 0) {
         number.erase(number.begin(), number.begin() + (rhs / BASE));
         return *this;
-    }
+    }*/
     bool negative_flag = sign;
     if (negative_flag)
         *this = -(*this);
     big_integer result;
-    result.number.clear();
-    result.number.reserve(length() + 2);
     int gap = rhs / BASE;
     rhs %= BASE;
-    ui cf = 0;
-    for (size_t i = length() - 1; static_cast<int>(i) >= gap; i--) {
-        result.number.push_back(((*this)[i] >> rhs) + cf);
-        cf = cast_to_ui((*this)[i] << (BASE - rhs));
+    result.number.resize(number.size() - gap + 1);
+    auto res_data = result.number.get_data_and_check();
+    auto data = number.get_data();
+    if (rhs == 0) {
+        for (int i = static_cast<int>(number.size()) - 1; i >= gap; i--)
+            res_data[i - gap] = data[i];
     }
-    std::reverse(result.number.begin(), result.number.end());
+    else {
+        ui cf = 0;
+        for (int i = static_cast<int>(number.size()) - 1; i >= gap; i--) {
+            res_data[i - gap] = (data[i] >> rhs) + cf;
+            cf = cast_to_ui(data[i] << (BASE - rhs));
+        }
+    }
+    result.shrink();
+    //std::reverse(result.number.begin(), result.number.end());
     result.sign = sign;
     if (negative_flag)
         result = -result - 1;
@@ -406,6 +439,7 @@ std::string to_string(big_integer const &source) {
     size_t str_it = 0;
     auto src_copy = source.sign ? -source : source;
     src_copy.shrink();
+    src_copy.number.get_data_and_check();
     while (src_copy > 0) {
         auto slice = (src_copy % BASE_10)[0];
         for (size_t i = 0; i < 9; i++) {

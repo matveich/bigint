@@ -1038,8 +1038,8 @@ class GTEST_API_ UnitTestImpl {
   //   test_case_name: name of the test case
   //   type_param:     the name of the test's type parameter, or NULL if
   //                   this is not a typed or a type-parameterized test.
-  //   set_up_tc:      pointer to the function that sets up the test case
-  //   tear_down_tc:   pointer to the function that tears down the test case
+  //   set_up_tc:      ptr to the function that sets up the test case
+  //   tear_down_tc:   ptr to the function that tears down the test case
   TestCase* GetTestCase(const char* test_case_name,
                         const char* type_param,
                         Test::SetUpTestCaseFunc set_up_tc,
@@ -1049,8 +1049,8 @@ class GTEST_API_ UnitTestImpl {
   //
   // Arguments:
   //
-  //   set_up_tc:    pointer to the function that sets up the test case
-  //   tear_down_tc: pointer to the function that tears down the test case
+  //   set_up_tc:    ptr to the function that sets up the test case
+  //   tear_down_tc: ptr to the function that tears down the test case
   //   test_info:    the TestInfo object
   void AddTestInfo(Test::SetUpTestCaseFunc set_up_tc,
                    Test::TearDownTestCaseFunc tear_down_tc,
@@ -1160,7 +1160,7 @@ class GTEST_API_ UnitTestImpl {
   void InitDeathTestSubprocessControlInfo() {
     internal_run_death_test_flag_.reset(ParseInternalRunDeathTestFlag());
   }
-  // Returns a pointer to the parsed --gtest_internal_run_death_test
+  // Returns a ptr to the parsed --gtest_internal_run_death_test
   // flag, or NULL if that flag was not specified.
   // This information is useful only in a death test child process.
   // Must not be called before a call to InitGoogleTest.
@@ -1168,7 +1168,7 @@ class GTEST_API_ UnitTestImpl {
     return internal_run_death_test_flag_.get();
   }
 
-  // Returns a pointer to the current death test factory.
+  // Returns a ptr to the current death test factory.
   internal::DeathTestFactory* death_test_factory() {
     return death_test_factory_.get();
   }
@@ -3490,7 +3490,7 @@ bool Test::HasSameFixtureClass() {
 #if GTEST_HAS_SEH
 
 // Adds an "exception thrown" fatal failure to the current test.  This
-// function returns its result via an output parameter pointer because VC++
+// function returns its result via an output parameter ptr because VC++
 // prohibits creation of objects with destructors on stack in functions
 // using __try (see error C2712).
 static std::string* FormatSehExceptionMessage(DWORD exception_code,
@@ -3692,9 +3692,9 @@ namespace internal {
 //   value_param:      text representation of the test's value parameter,
 //                     or NULL if this is not a value-parameterized test.
 //   fixture_class_id: ID of the test fixture class
-//   set_up_tc:        pointer to the function that sets up the test case
-//   tear_down_tc:     pointer to the function that tears down the test case
-//   factory:          pointer to the factory that creates a test object.
+//   set_up_tc:        ptr to the function that sets up the test case
+//   tear_down_tc:     ptr to the function that tears down the test case
+//   factory:          ptr to the factory that creates a test object.
 //                     The newly created TestInfo instance will assume
 //                     ownership of the factory object.
 TestInfo* MakeAndRegisterTestInfo(
@@ -3869,8 +3869,8 @@ int TestCase::total_test_count() const {
 //   name:         name of the test case
 //   a_type_param: the name of the test case's type parameter, or NULL if
 //                 this is not a typed or a type-parameterized test case.
-//   set_up_tc:    pointer to the function that sets up the test case
-//   tear_down_tc: pointer to the function that tears down the test case
+//   set_up_tc:    ptr to the function that sets up the test case
+//   tear_down_tc: ptr to the function that tears down the test case
 TestCase::TestCase(const char* a_name, const char* a_type_param,
                    Test::SetUpTestCaseFunc set_up_tc,
                    Test::TearDownTestCaseFunc tear_down_tc)
@@ -5302,7 +5302,7 @@ void UnitTest::AddTestPartResult(
       // the --gtest_catch_exceptions flags are specified.
       DebugBreak();
 #else
-      // Dereference NULL through a volatile pointer to prevent the compiler
+      // Dereference NULL through a volatile ptr to prevent the compiler
       // from removing. We use this rather than abort() or __builtin_trap() for
       // portability: Symbian doesn't implement abort() well, and some debuggers
       // don't correctly trap abort().
@@ -5652,8 +5652,8 @@ class TestCaseNameIs {
 //   test_case_name: name of the test case
 //   type_param:     the name of the test case's type parameter, or NULL if
 //                   this is not a typed or a type-parameterized test case.
-//   set_up_tc:      pointer to the function that sets up the test case
-//   tear_down_tc:   pointer to the function that tears down the test case
+//   set_up_tc:      ptr to the function that sets up the test case
+//   tear_down_tc:   ptr to the function that tears down the test case
 TestCase* UnitTestImpl::GetTestCase(const char* test_case_name,
                                     const char* type_param,
                                     Test::SetUpTestCaseFunc set_up_tc,
@@ -6273,7 +6273,7 @@ static void PrintColorEncoded(const char* str) {
 
   // Conceptually, we split the string into segments divided by escape
   // sequences.  Then we print one segment at a time.  At the end of
-  // each iteration, the str pointer advances to the beginning of the
+  // each iteration, the str ptr advances to the beginning of the
   // next segment.
   for (;;) {
     const char* p = strchr(str, '@');
@@ -7640,9 +7640,9 @@ DeathTest::TestRole ExecDeathTest::AssumeRole() {
 # endif  // !GTEST_OS_WINDOWS
 
 // Creates a concrete DeathTest-derived class that depends on the
-// --gtest_death_test_style flag, and sets the pointer pointed to
+// --gtest_death_test_style flag, and sets the ptr pointed to
 // by the "test" argument to its address.  If the test should be
-// skipped, sets that pointer to NULL.  Returns true, unless the
+// skipped, sets that ptr to NULL.  Returns true, unless the
 // flag is set to an invalid value.
 bool DefaultDeathTestFactory::Create(const char* statement, const RE* regex,
                                      const char* file, int line,
@@ -7959,7 +7959,7 @@ FilePath FilePath::RemoveExtension(const char* extension) const {
   return *this;
 }
 
-// Returns a pointer to the last occurence of a valid path separator in
+// Returns a ptr to the last occurence of a valid path separator in
 // the FilePath. On Windows, for example, both '/' and '\' are valid path
 // separators. Returns NULL if no path separator was found.
 const char* FilePath::FindLastPathSeparator() const {
