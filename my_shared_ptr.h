@@ -21,7 +21,8 @@ public:
     my_shared_ptr(const my_shared_ptr &other) : data(other.data),
                                                 capacity(other.capacity),
                                                 counter(other.counter) {
-        ++*counter;
+        if (counter)
+            ++*counter;
     }
 
     ~my_shared_ptr() {
@@ -33,7 +34,7 @@ public:
     }
 
     void reset() {
-        if (--*counter == 0)
+        if (counter && --*counter == 0)
             release();
         counter = nullptr;
         data = nullptr;
