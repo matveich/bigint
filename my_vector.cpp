@@ -48,12 +48,12 @@ void my_vector::reserve(size_t _capacity) {
     _capacity = std::max(_capacity, get_capacity() * ENLARGE_X);
     if (is_big) {
         auto p = data.big;
-        data.big.reset(new ui[_capacity], _capacity);
+        data.big.reset(new ui[_capacity + 2], _capacity);
         std::copy(p.get(), p.get() + _size, data.big.get());
     } else {
         is_big = true;
-        auto new_data = new ui[_capacity];
-        std::copy(real_data, real_data + _size, new_data);
+        auto new_data = new ui[_capacity + 2];
+        std::copy(real_data, real_data + _size, new_data + 2);
         new(&data.big)my_shared_ptr<ui>(new_data, _capacity);
     }
     real_data = data.big.get();
@@ -98,7 +98,7 @@ my_vector::ui* my_vector::copy_and_get() {
     if (!is_big || data.big.unique())
         return real_data;
     auto new_cap = std::min(data.big.get_capacity(), _size * ENLARGE_X);
-    data.big.reset(new ui[new_cap], new_cap);
+    data.big.reset(new ui[new_cap + 2], new_cap);
     std::copy(real_data, real_data + _size, data.big.get());
     return real_data = data.big.get();
 }

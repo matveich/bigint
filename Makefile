@@ -204,32 +204,32 @@ gtest/gtest-all.cc.s:
 	$(MAKE) -f CMakeFiles/big_integer_testing.dir/build.make CMakeFiles/big_integer_testing.dir/gtest/gtest-all.cc.s
 .PHONY : gtest/gtest-all.cc.s
 
-gtest/gtest_main.o: gtest/gtest_main.cc.o
+main.o: main.cpp.o
 
-.PHONY : gtest/gtest_main.o
+.PHONY : main.o
 
 # target to build an object file
-gtest/gtest_main.cc.o:
-	$(MAKE) -f CMakeFiles/big_integer_testing.dir/build.make CMakeFiles/big_integer_testing.dir/gtest/gtest_main.cc.o
-.PHONY : gtest/gtest_main.cc.o
+main.cpp.o:
+	$(MAKE) -f CMakeFiles/big_integer_testing.dir/build.make CMakeFiles/big_integer_testing.dir/main.cpp.o
+.PHONY : main.cpp.o
 
-gtest/gtest_main.i: gtest/gtest_main.cc.i
+main.i: main.cpp.i
 
-.PHONY : gtest/gtest_main.i
+.PHONY : main.i
 
 # target to preprocess a source file
-gtest/gtest_main.cc.i:
-	$(MAKE) -f CMakeFiles/big_integer_testing.dir/build.make CMakeFiles/big_integer_testing.dir/gtest/gtest_main.cc.i
-.PHONY : gtest/gtest_main.cc.i
+main.cpp.i:
+	$(MAKE) -f CMakeFiles/big_integer_testing.dir/build.make CMakeFiles/big_integer_testing.dir/main.cpp.i
+.PHONY : main.cpp.i
 
-gtest/gtest_main.s: gtest/gtest_main.cc.s
+main.s: main.cpp.s
 
-.PHONY : gtest/gtest_main.s
+.PHONY : main.s
 
 # target to generate assembly for a file
-gtest/gtest_main.cc.s:
-	$(MAKE) -f CMakeFiles/big_integer_testing.dir/build.make CMakeFiles/big_integer_testing.dir/gtest/gtest_main.cc.s
-.PHONY : gtest/gtest_main.cc.s
+main.cpp.s:
+	$(MAKE) -f CMakeFiles/big_integer_testing.dir/build.make CMakeFiles/big_integer_testing.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 my_vector.o: my_vector.cpp.o
 
@@ -276,9 +276,9 @@ help:
 	@echo "... gtest/gtest-all.o"
 	@echo "... gtest/gtest-all.i"
 	@echo "... gtest/gtest-all.s"
-	@echo "... gtest/gtest_main.o"
-	@echo "... gtest/gtest_main.i"
-	@echo "... gtest/gtest_main.s"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 	@echo "... my_vector.o"
 	@echo "... my_vector.i"
 	@echo "... my_vector.s"

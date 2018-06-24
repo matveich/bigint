@@ -10,74 +10,63 @@
 template<typename T>
 class my_shared_ptr {
 public:
-    my_shared_ptr() : data(nullptr),
-                      capacity(nullptr),
-                      counter(nullptr) {}
+    my_shared_ptr() : data(nullptr) {}
 
-    my_shared_ptr(T *p, size_t _capacity) : data(p),
-                                            capacity(new size_t(_capacity)),
-                                            counter(new size_t(1)) {}
+    my_shared_ptr(T *p, size_t data_size) : data(p) {
+        data[0] = 1;
+        data[1] = data_size;
+    }
 
-    my_shared_ptr(const my_shared_ptr &other) : data(other.data),
-                                                capacity(other.capacity),
-                                                counter(other.counter) {
-        if (counter)
-            ++*counter;
+    my_shared_ptr(const my_shared_ptr &other) : data(other.data) {
+        if (data)
+            ++data[0];
     }
 
     ~my_shared_ptr() {
         reset();
     }
 
-    T *get() {
-        return data;
+    T *get() const {
+        return data + 2;
     }
 
     void reset() {
-        if (counter && --*counter == 0)
+        if (data && --data[0] == 0)
             release();
-        counter = nullptr;
         data = nullptr;
-        capacity = nullptr;
     }
 
-    void reset(T *new_data, size_t _capacity) {
+    void reset(T *new_data, size_t data_size) {
         reset();
         data = new_data;
-        capacity = new size_t(_capacity);
-        counter = new size_t(1);
+        data[0] = 1;
+        data[1] = data_size;
     }
 
-    size_t get_capacity() {
-        return *capacity;
+    size_t get_counter() const {
+        return data[0];
+    }
+
+    size_t get_capacity() const {
+        return data[1];
+    }
+
+    bool unique() const {
+        return get_counter() == 1;
     }
 
     my_shared_ptr &operator=(my_shared_ptr other) {
-        swap(other);
+        std::swap(data, other.data);
         return *this;
     }
 
-    void swap(my_shared_ptr &other) {
-        std::swap(data, other.data);
-        std::swap(capacity, other.capacity);
-        std::swap(counter, other.counter);
-    }
-
-    bool unique() {
-        return *counter == 1;
-    }
+private:
+    // syntax: 0-byte - counter, 1-byte - capacity, then - data
+    T *data;
 
     void release() {
-        delete capacity;
         delete[] data;
-        delete counter;
     }
-
-private:
-    T *data;
-    size_t *capacity;
-    size_t *counter;
 };
-
 
 #endif //BIGINT_MY_SHARED_PTR_H

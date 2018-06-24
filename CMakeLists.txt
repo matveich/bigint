@@ -8,10 +8,10 @@ add_executable(big_integer_testing
         big_integer_testing.cpp
         gtest/gtest.h
         gtest/gtest-all.cc
-        gtest/gtest_main.cc
+        #gtest/gtest_main.cc
         big_integer.h
         big_integer.cpp
-        #main.cpp
+        main.cpp
         my_shared_ptr.h
         my_vector.h
         my_vector.cpp)

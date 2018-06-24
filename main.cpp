@@ -4,7 +4,7 @@
 #include "big_integer.h"
 
 int main() {
-    my_vector mv;
-    mv.resize(100);
+    //my_shared_ptr<size_t> ptr(new size_t[5], 3);
+    //ptr = ptr;
     return 0;
 }
