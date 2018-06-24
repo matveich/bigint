@@ -9,12 +9,13 @@ my_vector::my_vector() : is_big(false),
                          _size(0),
                          real_data(data.small) {}
 
-my_vector::my_vector(size_t size) : my_vector(size, 0) {
-}
+my_vector::my_vector(size_t size) : my_vector(size, 0) {}
 
 my_vector::~my_vector() {
-    if (is_big)
-        data.big.~big_storage();
+    if (is_big) {
+        is_big = false;
+        data.big.reset();
+    }
 }
 
 my_vector::my_vector(size_t size, my_vector::ui val) : my_vector() {
@@ -27,8 +28,8 @@ my_vector::my_vector(const my_vector &other) noexcept: my_vector() {
     is_big = other.is_big;
     _size = other._size;
     if (other.is_big) {
-        new(&data.big)big_storage(other.data.big);
-        real_data = data.big.ptr.get();
+        new(&data.big)my_shared_ptr<ui>(other.data.big);
+        real_data = data.big.get();
     } else {
         std::copy(other.data.small, other.data.small + other._size, data.small);
         real_data = data.small;
@@ -46,17 +47,16 @@ void my_vector::reserve(size_t _capacity) {
         return;
     _capacity = std::max(_capacity, get_capacity() * ENLARGE_X);
     if (is_big) {
-        auto p = data.big.ptr;
-        data.big.ptr.reset(new ui[_capacity], std::default_delete<ui[]>());
-        std::copy(p.get(), p.get() + _size, data.big.ptr.get());
+        auto p = data.big;
+        data.big.reset(new ui[_capacity], _capacity);
+        std::copy(p.get(), p.get() + _size, data.big.get());
     } else {
         is_big = true;
         auto new_data = new ui[_capacity];
         std::copy(real_data, real_data + _size, new_data);
-        new(&data.big)big_storage(new_data, _capacity);
+        new(&data.big)my_shared_ptr<ui>(new_data, _capacity);
     }
-    real_data = data.big.ptr.get();
-    data.big._capacity = _capacity;
+    real_data = data.big.get();
 }
 
 void my_vector::resize(size_t size, my_vector::ui val) {
@@ -71,11 +71,11 @@ void my_vector::resize(size_t size) {
 }
 
 size_t my_vector::get_capacity() {
-    return is_big ? data.big._capacity : SMALL_DATA_SIZE;
+    return is_big ? data.big.get_capacity() : SMALL_DATA_SIZE;
 }
 
 void my_vector::push_back(my_vector::ui x) {
-    data_check();
+    copy_and_get();
     if (get_capacity() < _size + 1)
         reserve(get_capacity() * ENLARGE_X);
     real_data[_size++] = x;
@@ -90,31 +90,32 @@ const my_vector::ui &my_vector::operator[](size_t i) const {
 }
 
 my_vector::ui &my_vector::operator[](size_t i) {
-    data_check();
+    copy_and_get();
     return real_data[i];
 }
 
-void my_vector::data_check() {
-    if (is_big && !data.big.ptr.unique()) {
-        data.big.ptr.reset(new ui[std::min(data.big._capacity, _size * ENLARGE_X)], std::default_delete<ui[]>());
-        std::copy(real_data, real_data + _size, data.big.ptr.get());
-        real_data = data.big.ptr.get();
-    }
+my_vector::ui* my_vector::copy_and_get() {
+    if (!is_big || data.big.unique())
+        return real_data;
+    auto new_cap = std::min(data.big.get_capacity(), _size * ENLARGE_X);
+    data.big.reset(new ui[new_cap], new_cap);
+    std::copy(real_data, real_data + _size, data.big.get());
+    return real_data = data.big.get();
 }
 
 my_vector &my_vector::operator=(const my_vector &other) noexcept {
     _size = other._size;
     if (other.is_big) {
         if (is_big)
-            data.big = big_storage(other.data.big);
+            data.big = other.data.big;
         else
-            new(&data.big)big_storage(other.data.big);
-        real_data = data.big.ptr.get();
+            new(&data.big)my_shared_ptr<ui>(other.data.big);
+        real_data = data.big.get();
     } else {
         if (is_big)
-            data.big.~big_storage();
+            data.big.reset();
         std::copy(other.data.small, other.data.small + other._size, data.small);
-        real_data = const_cast<ui *>(data.small);
+        real_data = data.small;
     }
     is_big = other.is_big;
     return *this;
@@ -132,34 +133,6 @@ my_vector::ui my_vector::back() const {
     return real_data[_size - 1];
 }
 
-void my_vector::insert_to_begin(size_t amount, my_vector::ui val) {
-    size_t new_cap = std::max(get_capacity() * ENLARGE_X, _size + amount);
-    auto cp = new ui[new_cap];
-    std::copy(real_data, real_data + _size, cp + amount);
-    std::fill(cp, cp + amount, val);
-    if (new_cap > SMALL_DATA_SIZE) {
-        if (is_big) {
-            data.big._capacity = new_cap;
-            data.big.ptr.reset(cp, std::default_delete<ui[]>());
-        } else {
-            is_big = true;
-            new(&data.big)big_storage(cp, new_cap);
-        }
-        real_data = data.big.ptr.get();
-    } else
-        std::copy(cp, cp + SMALL_DATA_SIZE, data.small);
-    _size += amount;
-}
-
-my_vector::ui *my_vector::get_data() {
-    return real_data;
-}
-
 my_vector::ui *my_vector::get_data() const {
-    return real_data;
-}
-
-my_vector::ui *my_vector::get_data_and_check() {
-    data_check();
     return real_data;
 }

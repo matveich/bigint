@@ -49,7 +49,7 @@ big_integer::big_integer(std::string source) :
 
 big_integer::~big_integer() {
     sign = false;
-    number = my_vector();
+    number.~my_vector();
 }
 
 big_integer &big_integer::operator=(big_integer const &other) {
@@ -69,7 +69,7 @@ big_integer big_integer::operator-() const {
     auto _size = number.size();
     res.number.resize(_size + 1);
     auto data = number.get_data();
-    auto res_data = res.number.get_data_and_check();
+    auto res_data = res.number.copy_and_get();
     for (size_t i = 0; i < _size; ++i)
         res_data[i] = ~data[i];
     res.shrink();
@@ -80,7 +80,7 @@ big_integer big_integer::operator-() const {
 
 void big_integer::add_one() {
     bool cf = true;
-    auto data = number.get_data_and_check();
+    auto data = number.get_data();
     auto _size = number.size();
     for (size_t i = 0; cf && i < _size; ++i) {
         data[i] += 1;
@@ -100,8 +100,9 @@ big_integer &big_integer::operator+=(big_integer const &rhs) {
     size_t h_i = number.size() - 1;
     number.resize(n, sign ? MAX_INT : 0);
     result.number.resize(n, result.sign ? MAX_INT : 0);
-    auto data = number.get_data_and_check();
-    auto res_data = result.number.get_data_and_check();
+    result.number.copy_and_get();
+    auto data = number.get_data();
+    auto res_data = result.number.get_data();
     for (size_t it = 0; it < n; ++it) {
         cf = cf + data[it] + res_data[it];
         res_data[it] = cast_to_ui(cf);
@@ -150,7 +151,7 @@ big_integer big_integer::mul_long_short(big_integer::ui x, size_t offset) const 
     result.sign = sign;
     size_t n = length() + offset + 2;
     result.number.resize(n, sign ? UINT32_MAX : 0);
-    auto res_data = result.number.get_data();
+    auto res_data = result.number.copy_and_get();
     auto data = number.get_data();
     ull mul = 0, cf = 0;
     for (size_t i = offset; i < n - 2; i++) {
@@ -198,9 +199,7 @@ std::pair<big_integer, big_integer> big_integer::div_mod(big_integer const &rhs)
     if (rhs.length() == 1)
         return std::make_pair(quotient(rhs[0]), remainder(rhs[0]));
     big_integer b(rhs);
-
-    //auto data = number.get_data_and_check();
-    b.number.get_data_and_check();
+    b.number.copy_and_get();
 
     // normalize b
     ui k = static_cast<ui>(ceil(log2((static_cast<double>(cast_to_ui(SHIFT_BASE >> 1)) / b.number.back()))));
@@ -210,7 +209,7 @@ std::pair<big_integer, big_integer> big_integer::div_mod(big_integer const &rhs)
     size_t n = b.length();
     big_integer q;
     q.number.resize(m + 1);
-    auto q_data = q.number.get_data_and_check();
+    auto q_data = q.number.copy_and_get();
     b <<= (BASE * m);
     if (*this > b) {
         q_data[m] = 1;
@@ -239,8 +238,8 @@ big_integer &big_integer::operator*=(big_integer const &rhs) {
     if (s1) storage = -storage;
     if (s2) rhs_copy = -rhs_copy;
     *this = 0;
-    storage.number.get_data_and_check();
-    auto rhs_data = rhs_copy.number.get_data_and_check();
+    storage.number.copy_and_get();
+    auto rhs_data = rhs_copy.number.copy_and_get();
     for (size_t i = 0; i < rhs_copy.length(); i++)
         *this += storage.mul_long_short(rhs_data[i], i);
     shrink();
@@ -310,7 +309,7 @@ big_integer big_integer::operator~() const {
 
 template<class FunctorT>
 big_integer &big_integer::apply_bitwise_operation(big_integer const &rhs, FunctorT functor) {
-    auto data = number.get_data_and_check();
+    auto data = number.get_data();
     for (size_t i = 0; i < length(); i++)
         data[i] = functor(data[i], rhs.number[i]);
     sign = functor(sign, rhs.sign);
@@ -324,7 +323,6 @@ big_integer &big_integer::operator&=(big_integer const &rhs) {
 big_integer operator&(big_integer a, big_integer const &b) {
     return a &= b;
 }
-
 
 big_integer &big_integer::operator|=(big_integer const &rhs) {
     return apply_bitwise_operation(rhs, std::bit_or<ui>());
@@ -346,17 +344,13 @@ big_integer &big_integer::operator<<=(int rhs) {
     if (rhs < 0)
         throw "error! right value is negative";
     bool negative_flag = sign;
-    /*if (rhs % BASE == 0) {
-        number.insert_to_begin(rhs / BASE, negative_flag ? MAX_INT : 0);
-        return *this;
-    }*/
     if (negative_flag)
         *this = -(*this);
     big_integer result;
     size_t start = rhs / BASE;
     result.number.resize(start + number.size(), negative_flag ? MAX_INT : 0);
-    auto res_data = result.number.get_data_and_check();
-    auto data = number.get_data();
+    auto res_data = result.number.copy_and_get();
+    auto data = number.copy_and_get();
     rhs %= BASE;
     ui cf = 0;
     if (rhs == 0) {
@@ -383,10 +377,6 @@ big_integer operator<<(big_integer a, int b) {
 big_integer &big_integer::operator>>=(int rhs) {
     if (rhs < 0)
         throw "error! right value is negative";
-    /*if (rhs % BASE == 0) {
-        number.erase(number.begin(), number.begin() + (rhs / BASE));
-        return *this;
-    }*/
     bool negative_flag = sign;
     if (negative_flag)
         *this = -(*this);
@@ -394,8 +384,8 @@ big_integer &big_integer::operator>>=(int rhs) {
     int gap = rhs / BASE;
     rhs %= BASE;
     result.number.resize(number.size() - gap + 1);
-    auto res_data = result.number.get_data_and_check();
-    auto data = number.get_data();
+    auto res_data = result.number.copy_and_get();
+    auto data = number.copy_and_get();
     if (rhs == 0) {
         for (int i = static_cast<int>(number.size()) - 1; i >= gap; i--)
             res_data[i - gap] = data[i];
@@ -407,7 +397,6 @@ big_integer &big_integer::operator>>=(int rhs) {
         }
     }
     result.shrink();
-    //std::reverse(result.number.begin(), result.number.end());
     result.sign = sign;
     if (negative_flag)
         result = -result - 1;
@@ -437,7 +426,7 @@ std::string to_string(big_integer const &source) {
     size_t str_it = 0;
     auto src_copy = source.sign ? -source : source;
     src_copy.shrink();
-    src_copy.number.get_data_and_check();
+    src_copy.number.copy_and_get();
     while (src_copy > 0) {
         auto slice = (src_copy % BASE_10)[0];
         for (size_t i = 0; i < 9; i++) {

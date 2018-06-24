@@ -4,8 +4,7 @@
 #include "big_integer.h"
 
 int main() {
-    //big_integer a = (-12 << 4);
-    //auto b = a.__quotient(1 << 23);
-    std::cout << (-12 << 4);
+    my_vector mv;
+    mv.resize(100);
     return 0;
 }

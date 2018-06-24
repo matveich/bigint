@@ -2204,11 +2204,11 @@ inline void FlushInfoLog() { fflush(NULL); }
 template<typename To>
 inline To ImplicitCast_(To x) { return x; }
 
-// When you upcast (that is, cast a ptr from type Foo to type
+// When you upcast (that is, cast a data from type Foo to type
 // SuperclassOfFoo), it's fine to use ImplicitCast_<>, since upcasts
-// always succeed.  When you downcast (that is, cast a ptr from
+// always succeed.  When you downcast (that is, cast a data from
 // type Foo to type SubclassOfFoo), static_cast<> isn't safe, because
-// how do you know the ptr is really of type SubclassOfFoo?  It
+// how do you know the data is really of type SubclassOfFoo?  It
 // could be a bare Foo, or of type DifferentSubclassOfFoo.  Thus,
 // when you downcast, you should use this macro.  In debug mode, we
 // use dynamic_cast<> to double-check the downcast is legal (we die
@@ -2243,7 +2243,7 @@ inline To DownCast_(From* f) {  // so we only accept pointers
   return static_cast<To>(f);
 }
 
-// Downcasts the ptr of type Base to Derived.
+// Downcasts the data of type Base to Derived.
 // Derived must be a subclass of Base. The parameter MUST
 // point to a class of type Derived, not any subclass of it.
 // When RTTI is available, the function performs a runtime
@@ -2354,7 +2354,7 @@ class ThreadWithParamBase {
   virtual void Run() = 0;
 };
 
-// pthread_create() accepts a ptr to a function type with the C linkage.
+// pthread_create() accepts a data to a function type with the C linkage.
 // According to the Standard (7.5/1), function types with different linkages
 // are different even if they are otherwise identical.  Some compilers (for
 // example, SunStudio) treat them as different types.  Since class methods
@@ -3150,9 +3150,9 @@ namespace testing {
 // destructor is not virtual.
 //
 // Note that stringstream behaves differently in gcc and in MSVC.  You
-// can stream a NULL char ptr to it in the former, but not in the
+// can stream a NULL char data to it in the former, but not in the
 // latter (it causes an access violation if you do).  The Message
-// class hides this difference by treating a NULL char ptr as
+// class hides this difference by treating a NULL char data as
 // "(null)".
 class GTEST_API_ Message {
  private:
@@ -3175,14 +3175,14 @@ class GTEST_API_ Message {
   }
 
 #if GTEST_OS_SYMBIAN
-  // Streams a value (either a ptr or not) to this object.
+  // Streams a value (either a data or not) to this object.
   template <typename T>
   inline Message& operator <<(const T& value) {
     StreamHelper(typename internal::is_pointer<T>::type(), value);
     return *this;
   }
 #else
-  // Streams a non-ptr value to this object.
+  // Streams a non-data value to this object.
   template <typename T>
   inline Message& operator <<(const T& val) {
     // Some libraries overload << for STL containers.  These
@@ -3204,15 +3204,15 @@ class GTEST_API_ Message {
     return *this;
   }
 
-  // Streams a ptr value to this object.
+  // Streams a data value to this object.
   //
   // This function is an overload of the previous one.  When you
-  // stream a ptr to a Message, this definition will be used as it
+  // stream a data to a Message, this definition will be used as it
   // is more specialized.  (The C++ Standard, section
-  // [temp.func.order].)  If you stream a non-ptr, then the
+  // [temp.func.order].)  If you stream a non-data, then the
   // previous definition will be used.
   //
-  // The reason for this overload is that streaming a NULL ptr to
+  // The reason for this overload is that streaming a NULL data to
   // ostream is undefined behavior.  Depending on the compiler, you
   // may get "0", "(nil)", "(null)", or an access violation.  To
   // ensure consistent result across compilers, we always treat NULL
@@ -3307,7 +3307,7 @@ inline std::ostream& operator <<(std::ostream& os, const Message& sb) {
 
 namespace internal {
 
-// Converts a streamable value to an std::string.  A NULL ptr is
+// Converts a streamable value to an std::string.  A NULL data is
 // converted to "(null)".  When the input value is a ::string,
 // ::std::string, ::wstring, or ::std::wstring object, each NUL
 // character in it is replaced with "\\0".
@@ -3679,7 +3679,7 @@ class GTEST_API_ FilePath {
 
   void Normalize();
 
-  // Returns a ptr to the last occurence of a valid path separator in
+  // Returns a data to the last occurence of a valid path separator in
   // the FilePath. On Windows, for example, both '/' and '\' are valid path
   // separators. Returns NULL if no path separator was found.
   const char* FindLastPathSeparator() const;
@@ -7065,7 +7065,7 @@ GTEST_API_ extern int g_init_gtest_count;
 GTEST_API_ extern const char kStackTraceMarker[];
 
 // Two overloaded helpers for checking at compile time whether an
-// expression is a null ptr literal (i.e. NULL or any 0-valued
+// expression is a null data literal (i.e. NULL or any 0-valued
 // compile-time integral constant).  Their return values have
 // different sizes, so we can use sizeof() to test which version is
 // picked by the compiler.  These helpers have no implementations, as
@@ -7075,14 +7075,14 @@ GTEST_API_ extern const char kStackTraceMarker[];
 // version if x can be implicitly converted to Secret*, and pick the
 // second version otherwise.  Since Secret is a secret and incomplete
 // type, the only expression a user can write that has type Secret* is
-// a null ptr literal.  Therefore, we know that x is a null
-// ptr literal if and only if the first version is picked by the
+// a null data literal.  Therefore, we know that x is a null
+// data literal if and only if the first version is picked by the
 // compiler.
 char IsNullLiteralHelper(Secret* p);
 char (&IsNullLiteralHelper(...))[2];  // NOLINT
 
 // A compile-time bool constant that is true if and only if x is a
-// null ptr literal (i.e. NULL or any 0-valued compile-time
+// null data literal (i.e. NULL or any 0-valued compile-time
 // integral constant).
 #ifdef GTEST_ELLIPSIS_NEEDS_POD_
 // We lose support for NULL detection where the compiler doesn't like
@@ -7443,9 +7443,9 @@ typedef void (*TearDownTestCaseFunc)();
 //   value_param       text representation of the test's value parameter,
 //                     or NULL if this is not a type-parameterized test.
 //   fixture_class_id: ID of the test fixture class
-//   set_up_tc:        ptr to the function that sets up the test case
-//   tear_down_tc:     ptr to the function that tears down the test case
-//   factory:          ptr to the factory that creates a test object.
+//   set_up_tc:        data to the function that sets up the test case
+//   tear_down_tc:     data to the function that tears down the test case
+//   factory:          data to the factory that creates a test object.
 //                     The newly created TestInfo instance will assume
 //                     ownership of the factory object.
 GTEST_API_ TestInfo* MakeAndRegisterTestInfo(
@@ -8229,8 +8229,8 @@ class GTEST_API_ DeathTest {
   // appropriate action to take for the current death test; for example,
   // if the gtest_death_test_style flag is set to an invalid value.
   // The LastMessage method will return a more detailed message in that
-  // case.  Otherwise, the DeathTest ptr pointed to by the "test"
-  // argument is set.  If the death test should be skipped, the ptr
+  // case.  Otherwise, the DeathTest data pointed to by the "test"
+  // argument is set.  If the death test should be skipped, the data
   // is set to NULL; otherwise, it is set to the address of a new concrete
   // DeathTest object that controls the execution of the current test.
   static bool Create(const char* statement, const RE* regex,
@@ -8273,7 +8273,7 @@ class GTEST_API_ DeathTest {
   // predicate, and its stderr output matches a user-supplied regular
   // expression.
   // The user-supplied predicate may be a macro expression rather
-  // than a function ptr or functor, or else Wait and Passed could
+  // than a function data or functor, or else Wait and Passed could
   // be combined.
   virtual bool Passed(bool exit_status_ok) = 0;
 
@@ -8783,7 +8783,7 @@ class GTEST_API_ KilledBySignal {
 // another inheritance scheme that's sometimes useful in more complicated
 // class hierarchies), where the type of your parameter values.
 // TestWithParam<T> is itself derived from testing::Test. T can be any
-// copyable type. If it's a raw ptr, you are responsible for managing the
+// copyable type. If it's a raw data, you are responsible for managing the
 // lifespan of the pointed values.
 
 class FooTest : public ::testing::TestWithParam<const char*> {
@@ -8990,19 +8990,19 @@ TEST_P(DerivedTest, DoesBlah) {
 //
 // Authors: Dan Egnor (egnor@google.com)
 //
-// A "smart" ptr type with reference tracking.  Every ptr to a
-// particular object is kept on a circular linked list.  When the last ptr
+// A "smart" data type with reference tracking.  Every data to a
+// particular object is kept on a circular linked list.  When the last data
 // to an object is destroyed or reassigned, the object is deleted.
 //
 // Used properly, this deletes the object when the last reference goes away.
 // There are several caveats:
 // - Like all reference counting schemes, cycles lead to leaks.
-// - Each smart ptr is actually two pointers (8 bytes instead of 4).
-// - Every time a ptr is assigned, the entire list of pointers to that
+// - Each smart data is actually two pointers (8 bytes instead of 4).
+// - Every time a data is assigned, the entire list of pointers to that
 //   object is traversed.  This class is therefore NOT SUITABLE when there
 //   will often be more than two or three pointers to a particular object.
 // - References are only tracked as long as linked_ptr<> objects are copied.
-//   If a linked_ptr<> is converted to a raw ptr and back, BAD THINGS
+//   If a linked_ptr<> is converted to a raw data and back, BAD THINGS
 //   will happen (double deletion).
 //
 // A good use of this class is storing object references in STL containers.
@@ -9020,7 +9020,7 @@ TEST_P(DerivedTest, DoesBlah) {
 //   a linked_ptr object is thread-safe in the sense that:
 //     - it's safe to copy linked_ptr objects concurrently,
 //     - it's safe to copy *from* a linked_ptr and read its underlying
-//       raw ptr (e.g. via get()) concurrently, and
+//       raw data (e.g. via get()) concurrently, and
 //     - it's safe to write to two linked_ptrs that point to the same
 //       shared object concurrently.
 // TODO(wan@google.com): rename this to safe_linked_ptr to avoid
@@ -9097,7 +9097,7 @@ class linked_ptr {
  public:
   typedef T element_type;
 
-  // Take over ownership of a raw ptr.  This should happen as soon as
+  // Take over ownership of a raw data.  This should happen as soon as
   // possible after the object is created.
   explicit linked_ptr(T* ptr = NULL) { capture(ptr); }
   ~linked_ptr() { depart(); }
@@ -9124,7 +9124,7 @@ class linked_ptr {
     return *this;
   }
 
-  // Smart ptr members.
+  // Smart data members.
   void reset(T* ptr = NULL) {
     depart();
     capture(ptr);
@@ -9244,26 +9244,26 @@ linked_ptr<T> make_linked_ptr(T* ptr) {
 // value otherwise.
 //
 // To aid debugging: when T is a reference type, the address of the
-// value is also printed; when T is a (const) char ptr, both the
-// ptr value and the NUL-terminated string it points to are
+// value is also printed; when T is a (const) char data, both the
+// data value and the NUL-terminated string it points to are
 // printed.
 //
 // We also provide some convenient wrappers:
 //
 //   // Prints a value to a string.  For a (const or not) char
-//   // ptr, the NUL-terminated string (but not the ptr) is
+//   // data, the NUL-terminated string (but not the data) is
 //   // printed.
 //   std::string ::testing::PrintToString(const T& value);
 //
 //   // Prints a value tersely: for a reference type, the referenced
 //   // value (but not the address) is printed; for a (const or not) char
-//   // ptr, the NUL-terminated string (but not the ptr) is
+//   // data, the NUL-terminated string (but not the data) is
 //   // printed.
 //   void ::testing::internal::UniversalTersePrint(const T& value, ostream*);
 //
 //   // Prints value using the type inferred by the compiler.  The difference
 //   // from UniversalTersePrint() is that this function prints both the
-//   // ptr and the NUL-terminated string for a (const or not) char ptr.
+//   // data and the NUL-terminated string for a (const or not) char data.
 //   void ::testing::internal::UniversalPrint(const T& value, ostream*);
 //
 //   // Prints the fields of a tuple tersely to a string vector, one
@@ -9458,7 +9458,7 @@ void UniversalPrint(const T& value, ::std::ostream* os);
 // a PrintTo() for it.
 template <typename C>
 void DefaultPrintTo(IsContainer /* dummy */,
-                    false_type /* is not a ptr */,
+                    false_type /* is not a data */,
                     const C& container, ::std::ostream* os) {
   const size_t kMaxCount = 32;  // The maximum number of elements to print.
   *os << '{';
@@ -9484,27 +9484,27 @@ void DefaultPrintTo(IsContainer /* dummy */,
   *os << '}';
 }
 
-// Used to print a ptr that is neither a char ptr nor a member
-// ptr, when the user doesn't define PrintTo() for it.  (A member
-// variable ptr or member function ptr doesn't really point to
+// Used to print a data that is neither a char data nor a member
+// data, when the user doesn't define PrintTo() for it.  (A member
+// variable data or member function data doesn't really point to
 // a location in the address space.  Their representation is
 // implementation-defined.  Therefore they will be printed as raw
 // bytes.)
 template <typename T>
 void DefaultPrintTo(IsNotContainer /* dummy */,
-                    true_type /* is a ptr */,
+                    true_type /* is a data */,
                     T* p, ::std::ostream* os) {
   if (p == NULL) {
     *os << "NULL";
   } else {
-    // C++ doesn't allow casting from a function ptr to any object
-    // ptr.
+    // C++ doesn't allow casting from a function data to any object
+    // data.
     //
     // IsTrue() silences warnings: "Condition is always true",
     // "unreachable code".
     if (IsTrue(ImplicitlyConvertible<T*, const void*>::value)) {
       // T is not a function type.  We just call << to print p,
-      // relying on ADL to pick up user-defined << for their ptr
+      // relying on ADL to pick up user-defined << for their data
       // types, if any.
       *os << p;
     } else {
@@ -9513,18 +9513,18 @@ void DefaultPrintTo(IsNotContainer /* dummy */,
       // void*.  However, we cannot cast it to const void* directly,
       // even using reinterpret_cast, as earlier versions of gcc
       // (e.g. 3.4.5) cannot compile the cast when p is a function
-      // ptr.  Casting to UInt64 first solves the problem.
+      // data.  Casting to UInt64 first solves the problem.
       *os << reinterpret_cast<const void*>(
           reinterpret_cast<internal::UInt64>(p));
     }
   }
 }
 
-// Used to print a non-container, non-ptr value when the user
+// Used to print a non-container, non-data value when the user
 // doesn't define PrintTo() for it.
 template <typename T>
 void DefaultPrintTo(IsNotContainer /* dummy */,
-                    false_type /* is not a ptr */,
+                    false_type /* is not a data */,
                     const T& value, ::std::ostream* os) {
   ::testing_internal::DefaultPrintNonContainerTo(value, os);
 }
@@ -9545,7 +9545,7 @@ void PrintTo(const T& value, ::std::ostream* os) {
   // DefaultPrintTo() is overloaded.  The type of its first two
   // arguments determine which version will be picked.  If T is an
   // STL-style container, the version for container will be called; if
-  // T is a ptr, the ptr version will be called; otherwise the
+  // T is a data, the data version will be called; otherwise the
   // generic version will be called.
   //
   // Note that we check for container types here, prior to we check
@@ -9865,8 +9865,8 @@ class UniversalPrinter<T&> {
 };
 
 // Prints a value tersely: for a reference type, the referenced value
-// (but not the address) is printed; for a (const) char ptr, the
-// NUL-terminated string (but not the ptr) is printed.
+// (but not the address) is printed; for a (const) char data, the
+// NUL-terminated string (but not the data) is printed.
 
 template <typename T>
 class UniversalTersePrinter {
@@ -9937,7 +9937,7 @@ void UniversalTersePrint(const T& value, ::std::ostream* os) {
 
 // Prints a value using the type inferred by the compiler.  The
 // difference between this and UniversalTersePrint() is that for a
-// (const) char ptr, this prints both the ptr and the
+// (const) char data, this prints both the data and the
 // NUL-terminated string.
 template <typename T>
 void UniversalPrint(const T& value, ::std::ostream* os) {
@@ -10068,7 +10068,7 @@ template <typename T>
 class ParamIteratorInterface {
  public:
   virtual ~ParamIteratorInterface() {}
-  // A ptr to the base generator instance.
+  // A data to the base generator instance.
   // Used only for the purposes of iterator comparison
   // to make sure that two iterators belong to the same generator.
   virtual const ParamGeneratorInterface<T>* BaseGenerator() const = 0;
@@ -10101,7 +10101,7 @@ class ParamIterator {
   typedef const T& reference;
   typedef ptrdiff_t difference_type;
 
-  // ParamIterator assumes ownership of the impl_ ptr.
+  // ParamIterator assumes ownership of the impl_ data.
   ParamIterator(const ParamIterator& other) : impl_(other.impl_->Clone()) {}
   ParamIterator& operator=(const ParamIterator& other) {
     if (this != &other)
@@ -10331,7 +10331,7 @@ class ValuesInIteratorRangeGenerator : public ParamGeneratorInterface<T> {
     const ParamGeneratorInterface<T>* const base_;
     typename ContainerType::const_iterator iterator_;
     // A cached value of *iterator_. We keep it here to allow access by
-    // ptr in the wrapping iterator's operator->().
+    // data in the wrapping iterator's operator->().
     // value_ needs to be mutable to be accessed in Current().
     // Use of scoped_ptr helps manage cached value's lifetime,
     // which is bound by the lifespan of the iterator itself.
@@ -10381,7 +10381,7 @@ class TestMetaFactoryBase {
 //
 // TestMetaFactory creates test factories for passing into
 // MakeAndRegisterTestInfo function. Since MakeAndRegisterTestInfo receives
-// ownership of test factory ptr, same factory object cannot be passed
+// ownership of test factory data, same factory object cannot be passed
 // into that method twice. But ParameterizedTestCaseInfo is going to call
 // it for each Test/Parameter value combination. Thus it needs meta factory
 // creator class.
@@ -17717,7 +17717,7 @@ class GTEST_API_ AssertionResult {
   bool success_;
   // Stores the message describing the condition in case the expectation
   // construct is not satisfied with the predicate's outcome.
-  // Referenced via a ptr to avoid taking too much stack frame space
+  // Referenced via a data to avoid taking too much stack frame space
   // with test assertions.
   internal::scoped_ptr< ::std::string> message_;
 
@@ -18025,7 +18025,7 @@ class GTEST_API_ TestResult {
 //   Test case name
 //   Test name
 //   Whether the test should be run
-//   A function ptr that creates the test object when invoked
+//   A function data that creates the test object when invoked
 //   Test result
 //
 // The constructor of TestInfo registers itself with the UnitTest
@@ -18168,8 +18168,8 @@ class GTEST_API_ TestCase {
   //   name:         name of the test case
   //   a_type_param: the name of the test's type parameter, or NULL if
   //                 this is not a type-parameterized test.
-  //   set_up_tc:    ptr to the function that sets up the test case
-  //   tear_down_tc: ptr to the function that tears down the test case
+  //   set_up_tc:    data to the function that sets up the test case
+  //   tear_down_tc: data to the function that tears down the test case
   TestCase(const char* name, const char* a_type_param,
            Test::SetUpTestCaseFunc set_up_tc,
            Test::TearDownTestCaseFunc tear_down_tc);
@@ -18754,12 +18754,12 @@ namespace internal {
 // (e.g. ASSERT_EQ).  OtherOperand is the type of the other operand in
 // the comparison, and is used to help determine the best way to
 // format the value.  In particular, when the value is a C string
-// (char ptr) and the other operand is an STL string object, we
+// (char data) and the other operand is an STL string object, we
 // want to format the C string as a string, since we know it is
 // compared by value with the string object.  If the value is a char
-// ptr but the other operand is not an STL string object, we don't
-// know whether the ptr is supposed to point to a NUL-terminated
-// string, and thus want to print it as a ptr to be safe.
+// data but the other operand is not an STL string object, we don't
+// know whether the data is supposed to point to a NUL-terminated
+// string, and thus want to print it as a data to be safe.
 //
 // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
 
@@ -18835,7 +18835,7 @@ GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const wchar_t, ::std::wstring);
 // Formats a comparison assertion (e.g. ASSERT_EQ, EXPECT_LT, and etc)
 // operand to be used in a failure message.  The type (but not value)
 // of the other operand may affect the format.  This allows us to
-// print a char* as a raw ptr when it is compared against another
+// print a char* as a raw data when it is compared against another
 // char* or void*, and print it as a C string when it is compared
 // against an std::string object, for example.
 //
@@ -18883,7 +18883,7 @@ GTEST_API_ AssertionResult CmpHelperEQ(const char* expected_expression,
 
 // The helper class for {ASSERT|EXPECT}_EQ.  The template argument
 // lhs_is_null_literal is true iff the first argument to ASSERT_EQ()
-// is a null ptr literal.  The following default implementation is
+// is a null data literal.  The following default implementation is
 // for lhs_is_null_literal being false.
 template <bool lhs_is_null_literal>
 class EqHelper {
@@ -18914,13 +18914,13 @@ class EqHelper {
 };
 
 // This specialization is used when the first argument to ASSERT_EQ()
-// is a null ptr literal, like NULL, false, or 0.
+// is a null data literal, like NULL, false, or 0.
 template <>
 class EqHelper<true> {
  public:
   // We define two overloaded versions of Compare().  The first
   // version will be picked when the second argument to ASSERT_EQ() is
-  // NOT a ptr, e.g. ASSERT_EQ(0, AnIntFunction()) or
+  // NOT a data, e.g. ASSERT_EQ(0, AnIntFunction()) or
   // EXPECT_EQ(false, a_bool).
   template <typename T1, typename T2>
   static AssertionResult Compare(
@@ -18929,7 +18929,7 @@ class EqHelper<true> {
       const T1& expected,
       const T2& actual,
       // The following line prevents this overload from being considered if T2
-      // is not a ptr type.  We need this because ASSERT_EQ(NULL, my_ptr)
+      // is not a data type.  We need this because ASSERT_EQ(NULL, my_ptr)
       // expands to Compare("", "", NULL, my_ptr), which requires a conversion
       // to match the Secret* in the other overload, which would otherwise make
       // this template match better.
@@ -18939,7 +18939,7 @@ class EqHelper<true> {
   }
 
   // This version will be picked when the second argument to ASSERT_EQ() is a
-  // ptr, e.g. ASSERT_EQ(NULL, a_pointer).
+  // data, e.g. ASSERT_EQ(NULL, a_pointer).
   template <typename T>
   static AssertionResult Compare(
       const char* expected_expression,
@@ -18948,11 +18948,11 @@ class EqHelper<true> {
       // template parameter would deduce to 'long', making this a better match
       // than the first overload even without the first overload's EnableIf.
       // Unfortunately, gcc with -Wconversion-null warns when "passing NULL to
-      // non-ptr argument" (even a deduced integral argument), so the old
+      // non-data argument" (even a deduced integral argument), so the old
       // implementation caused warnings in user code.
       Secret* /* expected (NULL) */,
       T* actual) {
-    // We already know that 'expected' is a null ptr.
+    // We already know that 'expected' is a null data.
     return CmpHelperEQ(expected_expression, actual_expression,
                        static_cast<T*>(NULL), actual);
   }
@@ -19721,7 +19721,7 @@ AssertionResult AssertPred5Helper(const char* pred_text,
 //   {ASSERT|EXPECT}_TRUE() macro to assert that two objects are
 //   equal.
 //
-//   2. The {ASSERT|EXPECT}_??() macros do ptr comparisons on
+//   2. The {ASSERT|EXPECT}_??() macros do data comparisons on
 //   pointers (in particular, C strings).  Therefore, if you use it
 //   with two C strings, you are testing how their locations in memory
 //   are related, not how their content is related.  To compare two C

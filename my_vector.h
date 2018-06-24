@@ -6,8 +6,7 @@
 #define BIGINT_MY_VECTOR_H
 
 #include <iostream>
-#include <memory>
-#include <utility>
+#include "my_shared_ptr.h"
 
 class my_vector {
 public:
@@ -49,13 +48,9 @@ public:
 
     my_vector &operator=(const my_vector &other) noexcept;
 
-    void insert_to_begin(size_t amount, ui val);
-
-    ui *get_data();
-
     ui *get_data() const;
 
-    ui *get_data_and_check();
+    ui* copy_and_get();
 
 private:
     static const size_t SMALL_DATA_SIZE = 4;
@@ -64,31 +59,15 @@ private:
     size_t _size;
     ui *real_data;
 
-    struct big_storage {
-        std::shared_ptr<ui> ptr;
-        size_t _capacity;
-
-        big_storage() noexcept :
-                ptr(nullptr, std::default_delete<ui[]>()),
-                _capacity(0) {}
-
-        big_storage(ui *p, size_t capacity) noexcept :
-                ptr(p, std::default_delete<ui[]>()),
-                _capacity(capacity) {}
-
-        big_storage(const big_storage &other) noexcept = default;
-    };
 
     union abstract_data {
         ui small[SMALL_DATA_SIZE]{};
-        big_storage big;
+        my_shared_ptr<ui> big;
 
         abstract_data() {}
 
         ~abstract_data() {}
     } data;
-
-    void data_check();
 };
 
 
